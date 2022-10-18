@@ -8,7 +8,6 @@ Imports System
 Imports System.Collections.Generic
 Imports System.Diagnostics
 Imports System.Linq
-Imports System.Reflection
 Imports System.Runtime.InteropServices
 
 'This module contains this program's core procedures.
@@ -71,11 +70,48 @@ Public Module CoreModule
             If Document IsNot Nothing Then
                GetWindowThreadProcessId(WindowH, ProcessId)
                HTMLDocuments.Add(New HTMLDocumentStr With {.Document = Document, .Elements = GetElements(Document), .Executable = Process.GetProcessById(ProcessId).MainModule.FileName})
+               CheckForFrames(HTMLDocuments.Last)
             End If
          End If
       Catch ExceptionO As Exception
          Console.WriteLine(ExceptionO.Message)
       End Try
+   End Sub
+
+   'This procedure checks for frames in the specified HTML document.
+   Private Sub CheckForFrames(DocumentO As HTMLDocumentStr)
+      Dim Frame As mshtml.HTMLDocument = Nothing
+      Dim FrameIndex() As Integer = Nothing
+      Dim NextFrame As mshtml.HTMLDocument = Nothing
+      Dim Parents() As mshtml.HTMLDocument = Nothing
+      Dim Level As Integer = 0
+
+      ReDim FrameIndex(0 To Level)
+      ReDim Parents(0 To Level)
+      Frame = DocumentO.Document
+      Do Until (Level = 0) AndAlso (FrameIndex(Level) >= Frame.frames.length)
+         Do While FrameIndex(Level) < Frame.frames.length
+            NextFrame = Frame.frames.item(FrameIndex(Level)).document
+            If NextFrame Is Nothing Then Exit Do
+            Level += 1
+            ReDim Preserve FrameIndex(0 To Level)
+            ReDim Preserve Parents(0 To Level)
+            Parents(Level) = Frame
+            Frame = NextFrame
+         Loop
+
+         If NextFrame Is Nothing Then
+            HTMLDocuments.Add(New HTMLDocumentStr With {.Document = Frame, .Elements = GetElements(Frame)})
+         Else
+            HTMLDocuments.Add(New HTMLDocumentStr With {.Document = Frame, .Elements = GetElements(Frame)})
+            Frame = Parents(Level)
+            Level -= 1
+            ReDim Preserve FrameIndex(0 To Level)
+            ReDim Preserve Parents(0 To Level)
+         End If
+
+         If FrameIndex(Level) < Frame.frames.length Then FrameIndex(Level) += 1
+      Loop
    End Sub
 
    'This procedure returns any elements contained by the specified document.
