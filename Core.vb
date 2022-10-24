@@ -119,12 +119,9 @@ Public Module CoreModule
       Dim Elements As New List(Of HTMLElementStr)
 
       Try
-         Dim Item As Object = Nothing
-         Dim Value As String = Nothing
-
          With DocumentO.all
             For ItemIndex As Integer = 0 To .length - 1
-               Item = GetItemElements(Elements, .item(CObj(ItemIndex)))
+               GetItemElements(Elements, .item(CObj(ItemIndex)))
             Next ItemIndex
          End With
       Catch ExceptionO As Exception

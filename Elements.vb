@@ -13,7 +13,7 @@ Imports System.Linq
 'This module handles HTML elements.
 Public Module ElementsModule
    'This procedure returns the specified item's name and attributes.
-   Public Function GetItemElements(Elements As List(Of HTMLElementStr), Item As Object) As List(Of HTMLElementStr)
+   Public Sub GetItemElements(Elements As List(Of HTMLElementStr), Item As Object)
       Try
          Dim Value As String = Nothing
 
@@ -29,7 +29,5 @@ Public Module ElementsModule
       Catch ExceptionO As Exception
          Console.WriteLine(ExceptionO.Message)
       End Try
-
-      Return Elements
-   End Function
+   End Sub
 End Module
