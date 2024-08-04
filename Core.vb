@@ -14,23 +14,23 @@ Imports System.Runtime.InteropServices
 'This module contains this program's core procedures.
 Public Module CoreModule
    'The API constants and functions used by this module.
-   <DllImport("User32.dll", SetLastError:=True)> Private Function EnumChildWindows(ByVal hWndParent As Integer, ByVal lpEnumFunc As EnumWindowsProc, ByVal lParam As Integer) As Integer
+   <DllImport("User32.dll", SetLastError:=True)> Private Function EnumChildWindows(ByVal hWndParent As IntPtr, ByVal lpEnumFunc As EnumWindowsProc, ByVal lParam As IntPtr) As Integer
    End Function
-   <DllImport("User32.dll", SetLastError:=True)> Private Function EnumWindows(ByVal lpEnumFunc As EnumWindowsProc, ByVal lParam As Integer) As Integer
+   <DllImport("User32.dll", SetLastError:=True)> Private Function EnumWindows(ByVal lpEnumFunc As EnumWindowsProc, ByVal lParam As IntPtr) As Integer
    End Function
-   <DllImport("User32.dll", SetLastError:=True)> Private Function GetWindowThreadProcessId(ByVal hwnd As Integer, ByRef lpdwProcessId As Integer) As Integer
+   <DllImport("User32.dll", SetLastError:=True)> Private Function GetWindowThreadProcessId(ByVal hwnd As IntPtr, ByRef lpdwProcessId As Integer) As Integer
    End Function
-   <DllImport("Oleacc.dll", SetLastError:=True)> Private Function ObjectFromLresult(ByVal lResult As Integer, ByRef riid As Guid, ByVal wParam As Integer, <MarshalAs(UnmanagedType.Interface)> ByRef ppvObject As mshtml.HTMLDocument) As Integer
+   <DllImport("Oleacc.dll", SetLastError:=True)> Private Function ObjectFromLresult(ByVal lResult As IntPtr, ByRef riid As Guid, ByVal wParam As IntPtr, <MarshalAs(UnmanagedType.Interface)> ByRef ppvObject As mshtml.HTMLDocument) As Integer
    End Function
    <DllImport("User32.dll", SetLastError:=True)> Private Function RegisterWindowMessageA(ByVal lpString As String) As Integer
    End Function
-   <DllImport("user32.dll", SetLastError:=True)> Private Function SendMessageTimeoutA(ByVal hWnd As Integer, ByVal msg As Integer, ByVal wParam As Integer, ByVal lParam As Integer, ByVal flags As Integer, ByVal timeout As Integer, ByRef result As Integer) As IntPtr
+   <DllImport("user32.dll", SetLastError:=True)> Private Function SendMessageTimeoutA(ByVal hWnd As IntPtr, ByVal msg As Integer, ByVal wParam As IntPtr, ByVal lParam As IntPtr, ByVal flags As Integer, ByVal timeout As Integer, ByRef result As IntPtr) As IntPtr
    End Function
 
    Private Const SMTO_ABORTIFHUNG As Integer = &H2%
 
    'The delegates used by this module.
-   Private Delegate Function EnumWindowsProc(ByVal hWnd As Integer, ByVal lParam As Integer) As Integer
+   Private Delegate Function EnumWindowsProc(ByVal hWnd As IntPtr, ByVal lParam As IntPtr) As Integer
 
    'The structures and variables used by this module.
 
@@ -59,15 +59,15 @@ Public Module CoreModule
    Private HTMLDocuments As List(Of HTMLDocumentStr) = Nothing  'Contains the list of HTML documents and their elements.
 
    'This procedure checks for HTML document interfaces and add any found to a list.
-   Private Sub CheckForDocument(WindowH As Integer)
+   Private Sub CheckForDocument(WindowH As IntPtr)
       Try
          Dim Document As mshtml.HTMLDocument = Nothing
-         Dim LResult As Integer = Nothing
+         Dim LResult As IntPtr = IntPtr.Zero
          Dim ProcessId As Integer = Nothing
 
-         SendMessageTimeoutA(WindowH, WMHTMLGetObjectMessage, CInt(0), CInt(0), SMTO_ABORTIFHUNG, CInt(1000), LResult)
-         If Not LResult = 0 Then
-            ObjectFromLresult(LResult, DocumentREFIID, CInt(0), Document)
+         SendMessageTimeoutA(WindowH, WMHTMLGetObjectMessage, IntPtr.Zero, IntPtr.Zero, SMTO_ABORTIFHUNG, CInt(1000), LResult)
+         If Not LResult = IntPtr.Zero Then
+            ObjectFromLresult(LResult, DocumentREFIID, IntPtr.Zero, Document)
             If Document IsNot Nothing Then
                GetWindowThreadProcessId(WindowH, ProcessId)
                HTMLDocuments.Add(New HTMLDocumentStr With {.Document = Document, .Elements = GetDocumentElements(Document), .Executable = Process.GetProcessById(ProcessId).MainModule.FileName})
@@ -170,7 +170,7 @@ Public Module CoreModule
    End Function
 
    'This procedure handles any child windows that are found.
-   Private Function HandleChildWindow(hWnd As Integer, lParam As Integer) As Integer
+   Private Function HandleChildWindow(hWnd As IntPtr, lParam As IntPtr) As Integer
       Try
          CheckForDocument(hWnd)
       Catch ExceptionO As Exception
@@ -181,11 +181,11 @@ Public Module CoreModule
    End Function
 
    'This procedure handles any windows that are found.
-   Private Function HandleWindow(hWnd As Integer, lParam As Integer) As Integer
+   Private Function HandleWindow(hWnd As IntPtr, lParam As IntPtr) As Integer
       Try
          CheckForDocument(hWnd)
 
-         EnumChildWindows(hWnd, AddressOf HandleChildWindow, Nothing)
+         EnumChildWindows(hWnd, AddressOf HandleChildWindow, IntPtr.Zero)
       Catch ExceptionO As Exception
          Console.Error.WriteLine(ExceptionO.Message)
       End Try
@@ -206,7 +206,7 @@ Public Module CoreModule
             HTMLDocuments = New List(Of HTMLDocumentStr)
 
             InDebugMode = EnterDebugMode()
-            EnumWindows(AddressOf HandleWindow, CInt(0))
+            EnumWindows(AddressOf HandleWindow, IntPtr.Zero)
             If InDebugMode Then Process.LeaveDebugMode()
 
             If HTMLDocuments.Count = 0 Then
