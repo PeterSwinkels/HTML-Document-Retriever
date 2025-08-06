@@ -14,20 +14,21 @@ Imports System.Runtime.InteropServices
 'This module contains this program's core procedures.
 Public Module CoreModule
    'The API constants and functions used by this module.
-   <DllImport("User32.dll", SetLastError:=True)> Private Function EnumChildWindows(ByVal hWndParent As IntPtr, ByVal lpEnumFunc As EnumWindowsProc, ByVal lParam As IntPtr) As Integer
+   <DllImport("User32.dll", SetLastError:=True)> Private Function EnumChildWindows(ByVal hWndParent As IntPtr, ByVal lpEnumFunc As EnumWindowsProc, ByVal lParam As IntPtr) As Boolean
    End Function
-   <DllImport("User32.dll", SetLastError:=True)> Private Function EnumWindows(ByVal lpEnumFunc As EnumWindowsProc, ByVal lParam As IntPtr) As Integer
+   <DllImport("User32.dll", SetLastError:=True)> Private Function EnumWindows(ByVal lpEnumFunc As EnumWindowsProc, ByVal lParam As IntPtr) As Boolean
    End Function
-   <DllImport("User32.dll", SetLastError:=True)> Private Function GetWindowThreadProcessId(ByVal hwnd As IntPtr, ByRef lpdwProcessId As Integer) As Integer
+   <DllImport("User32.dll", SetLastError:=True)> Private Function GetWindowThreadProcessId(ByVal hwnd As IntPtr, ByRef lpdwProcessId As UInteger) As Integer
    End Function
    <DllImport("Oleacc.dll", SetLastError:=True)> Private Function ObjectFromLresult(ByVal lResult As IntPtr, ByRef riid As Guid, ByVal wParam As IntPtr, <MarshalAs(UnmanagedType.Interface)> ByRef ppvObject As mshtml.HTMLDocument) As Integer
    End Function
-   <DllImport("User32.dll", SetLastError:=True)> Private Function RegisterWindowMessageA(ByVal lpString As String) As Integer
+   <DllImport("User32.dll", SetLastError:=True)> Private Function RegisterWindowMessageA(ByVal lpString As String) As UInteger
    End Function
-   <DllImport("user32.dll", SetLastError:=True)> Private Function SendMessageTimeoutA(ByVal hWnd As IntPtr, ByVal msg As Integer, ByVal wParam As IntPtr, ByVal lParam As IntPtr, ByVal flags As Integer, ByVal timeout As Integer, ByRef result As IntPtr) As IntPtr
+   <DllImport("user32.dll", CharSet:=CharSet.Ansi, SetLastError:=True)>
+   Private Function SendMessageTimeoutA(ByVal hWnd As IntPtr, ByVal msg As UInteger, ByVal wParam As IntPtr, ByVal lParam As IntPtr, ByVal fuFlags As UInteger, ByVal uTimeout As UInteger, ByRef lpdwResult As IntPtr) As IntPtr
    End Function
 
-   Private Const SMTO_ABORTIFHUNG As Integer = &H2%
+   Private Const SMTO_ABORTIFHUNG As UInteger = &H2UI
 
    'The delegates used by this module.
    Private Delegate Function EnumWindowsProc(ByVal hWnd As IntPtr, ByVal lParam As IntPtr) As Integer
@@ -53,8 +54,8 @@ Public Module CoreModule
       Public Name As String                            'Defines an element's name.
    End Structure
 
-   Private ReadOnly DocumentREFIID As New Guid("{626FC520-A41E-11CF-A731-00A0C9082637}")              'Contains the HTML document interface's reference id.
-   Private ReadOnly WMHTMLGetObjectMessage As Integer = RegisterWindowMessageA("WM_HTML_GETOBJECT")   'Contains the message used to retrieve a HTML document interface.
+   Private ReadOnly DocumentREFIID As New Guid("{626FC520-A41E-11CF-A731-00A0C9082637}")               'Contains the HTML document interface's reference id.
+   Private ReadOnly WMHTMLGetObjectMessage As UInteger = RegisterWindowMessageA("WM_HTML_GETOBJECT")   'Contains the message used to retrieve a HTML document interface.
 
    Private HTMLDocuments As List(Of HTMLDocumentStr) = Nothing  'Contains the list of HTML documents and their elements.
 
@@ -63,14 +64,14 @@ Public Module CoreModule
       Try
          Dim Document As mshtml.HTMLDocument = Nothing
          Dim LResult As IntPtr = IntPtr.Zero
-         Dim ProcessId As Integer = Nothing
+         Dim ProcessId As UInteger = Nothing
 
          SendMessageTimeoutA(WindowH, WMHTMLGetObjectMessage, IntPtr.Zero, IntPtr.Zero, SMTO_ABORTIFHUNG, CInt(1000), LResult)
          If Not LResult = IntPtr.Zero Then
             ObjectFromLresult(LResult, DocumentREFIID, IntPtr.Zero, Document)
             If Document IsNot Nothing Then
                GetWindowThreadProcessId(WindowH, ProcessId)
-               HTMLDocuments.Add(New HTMLDocumentStr With {.Document = Document, .Elements = GetDocumentElements(Document), .Executable = Process.GetProcessById(ProcessId).MainModule.FileName})
+               HTMLDocuments.Add(New HTMLDocumentStr With {.Document = Document, .Elements = GetDocumentElements(Document), .Executable = Process.GetProcessById(CInt(ProcessId)).MainModule.FileName})
                CheckForFrames(HTMLDocuments.Last)
             End If
          End If
@@ -193,7 +194,7 @@ Public Module CoreModule
       Return CInt(True)
    End Function
 
-   'This procedue is executed when this program is started.
+   'This procedure is executed when this program is started.
    Public Sub Main()
       Try
          Dim InDebugMode As New Boolean
