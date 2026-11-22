@@ -170,6 +170,34 @@ Public Module CoreModule
       Return Nothing
    End Function
 
+   'This procedure returns the specified item's name and attributes.
+   Private Sub GetItemElements(Elements As List(Of HTMLElementStr), Item As IHTMLElement)
+      Try
+         Dim Attribute As IHTMLDOMAttribute = Nothing
+         Dim Attributes As IHTMLAttributeCollection = Nothing
+         Dim DOMNode As IHTMLDOMNode = Nothing
+         Dim Value As String = Nothing
+
+         Elements.Add(New HTMLElementStr With {.Attributes = New List(Of HTMLAttributeStr), .Name = Item.tagName})
+
+         DOMNode = TryCast(Item, IHTMLDOMNode)
+         If DOMNode IsNot Nothing Then
+            Attributes = TryCast(DOMNode.attributes, IHTMLAttributeCollection)
+            If Attributes IsNot Nothing Then
+               For Nodeindex As Integer = 0 To Attributes.length - 1
+                  Attribute = DirectCast(Attributes.item(CObj(Nodeindex)), IHTMLDOMAttribute)
+                  Value = Attribute.nodeValue?.ToString()
+                  If Not Value = Nothing Then
+                     Elements.Last().Attributes.Add(New HTMLAttributeStr With {.Name = Attribute.nodeName, .Value = Value})
+                  End If
+               Next Nodeindex
+            End If
+         End If
+      Catch ExceptionO As Exception
+         Console.Error.WriteLine(ExceptionO.Message)
+      End Try
+   End Sub
+
    'This procedure handles any child windows that are found.
    Private Function HandleChildWindow(hWnd As IntPtr, lParam As IntPtr) As Integer
       Try
